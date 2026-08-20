@@ -1,4 +1,5 @@
 import json
+import os
 
 
 class Book:
@@ -30,8 +31,9 @@ class User:
 
 class Library:
 
-    def __init__(self):
+    def __init__(self, data_file="books.json"):
         self.books = []
+        self.data_file = data_file
 
     # Add a book
     def add_book(self, book):
@@ -104,6 +106,35 @@ class Library:
 
         print("Book not found.")
 
+    # Find / search books by title or author (case-insensitive substring)
+    def search_books(self, query):
+        if not query or not query.strip():
+            print("Search query cannot be empty.")
+            return []
+
+        needle = query.strip().lower()
+        results = [
+            book for book in self.books
+            if needle in book.title.lower() or needle in book.author.lower()
+        ]
+
+        if not results:
+            print(f'No books found matching "{query}".')
+            return []
+
+        print(f'\n===== SEARCH RESULTS FOR "{query}" =====')
+        for book in results:
+            book.display()
+        print(f"{len(results)} match(es) found.")
+        return results
+
+    # Search helper (kept from earlier fix)
+    def find_book(self, title):
+        for book in self.books:
+            if book.title.lower() == title.lower():
+                return book
+        return None
+
     # Save books to JSON
     def save_data(self):
 
@@ -117,112 +148,104 @@ class Library:
                 "available": book.available
             })
 
-        with open("books.json", "w") as file:
+        with open(self.data_file, "w") as file:
             json.dump(data, file, indent=4)
 
     # Load books from JSON
     def load_data(self):
 
-        try:
-
-            with open("books.json", "r") as file:
-                data = json.load(file)
-
-            for item in data:
-
-                book = Book(
-                    item["title"],
-                    item["author"],
-                    item["available"]
-                )
-
-                self.books.append(book)
-
-        except FileNotFoundError:
-
+        if not os.path.exists(self.data_file):
             print("No saved library data found.")
             print("Starting with an empty library.")
+            return
+
+        try:
+
+            with open(self.data_file, "r") as file:
+                data = json.load(file)
+
+            self.books = [
+                Book(item["title"], item["author"], item.get("available", True))
+                for item in data
+            ]
+
+        except (json.JSONDecodeError, KeyError) as e:
+            print(f"Saved data is corrupted ({e}). Starting with an empty library.")
+            self.books = []
 
 
 # =========================
 # Main Program
 # =========================
 
-library = Library()
+if __name__ == "__main__":
 
-library.load_data()
+    library = Library()
+    library.load_data()
+    user = User("Arman")
 
-user = User("Arman")
+    while True:
 
+        print("\n==============================")
+        print("   LIBRARY MANAGEMENT SYSTEM")
+        print("==============================")
 
-while True:
+        print("1. Display Books")
+        print("2. Add Book")
+        print("3. Borrow Book")
+        print("4. Return Book")
+        print("5. My Borrowed Books")
+        print("6. Delete Book")
+        print("7. Find Book")
+        print("8. Exit")
 
-    print("\n==============================")
-    print("   LIBRARY MANAGEMENT SYSTEM")
-    print("==============================")
+        choice = input("\nEnter your choice: ")
 
-    print("1. Display Books")
-    print("2. Add Book")
-    print("3. Borrow Book")
-    print("4. Return Book")
-    print("5. My Borrowed Books")
-    print("6. Delete Book")
-    print("7. Exit")
+        # Display books
+        if choice == "1":
+            library.display_books()
 
-    choice = input("\nEnter your choice: ")
+        # Add book
+        elif choice == "2":
+            title = input("Enter book title: ").strip()
+            author = input("Enter author name: ").strip()
+            if not title or not author:
+                print("Title and author cannot be empty.")
+                continue
+            book = Book(title, author)
+            library.add_book(book)
+            library.save_data()
 
-    # Display books
-    if choice == "1":
+        # Borrow book
+        elif choice == "3":
+            title = input("Enter book title to borrow: ").strip()
+            library.borrow_book(user, title)
 
-        library.display_books()
+        # Return book
+        elif choice == "4":
+            title = input("Enter book title to return: ").strip()
+            library.return_book(user, title)
 
-    # Add book
-    elif choice == "2":
+        # Show borrowed books
+        elif choice == "5":
+            user.show_books()
 
-        title = input("Enter book title: ")
-        author = input("Enter author name: ")
+        # Delete book
+        elif choice == "6":
+            title = input("Enter book title to delete: ").strip()
+            library.delete_book(title)
 
-        book = Book(title, author)
+        # Find / search book
+        elif choice == "7":
+            query = input("Search by title or author: ").strip()
+            library.search_books(query)
 
-        library.add_book(book)
-        library.save_data()
+        # Exit
+        elif choice == "8":
+            library.save_data()
+            print("Library data saved.")
+            print("Thank you for using the Library Management System!")
+            break
 
-    # Borrow book
-    elif choice == "3":
-
-        title = input("Enter book title to borrow: ")
-
-        library.borrow_book(user, title)
-
-    # Return book
-    elif choice == "4":
-
-        title = input("Enter book title to return: ")
-
-        library.return_book(user, title)
-
-    # Show borrowed books
-    elif choice == "5":
-
-        user.show_books()
-
-    # Delete book
-    elif choice == "6":
-
-        title = input("Enter book title to delete: ")
-
-        library.delete_book(title)
-
-    # Exit
-    elif choice == "7":
-
-        library.save_data()
-
-        print("Library data saved.")
-        print("Thank you for using the Library Management System!")
-
-        break
-
-    else:
-
-        print("Invalid choice. Please enter 1-7.")
+        else:
+            print("Invalid choice. Please enter 1-8.")
