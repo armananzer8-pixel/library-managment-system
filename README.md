@@ -259,3 +259,50 @@ Built as a Python learning and portfolio project.
 LBMS is a beginner-friendly Python project designed to demonstrate practical use of **OOP, JSON, file handling, and GitHub**.
 
 **Happy Coding! 🐍📚**
+
+
+
+**HOW THE DATA FLOW OR DATA STORAGE WORKS**
+
+## 🔄 Data Flow
+
+The Library Management System uses Python and JSON to store and manage library data.
+
+```text
+books.json
+    ↓
+json.load()
+    ↓
+Python Program
+    ↓
+Add / Update / Delete / Borrow / Return
+    ↓
+json.dump()
+    ↓
+books.json
+```
+
+### How it works
+
+1. **Read data:** `json.load()` reads saved book data from `books.json`.
+2. **Process data:** Python works with the book information and allows the user to add, update, borrow, return, or delete books.
+3. **Save data:** `json.dump()` saves the updated information back into `books.json`.
+4. **Persistent data:** The saved information can be loaded again the next time the program runs.
+
+### Example
+
+When a user borrows a book:
+
+```text
+books.json
+    ↓
+Python loads the book
+    ↓
+Book availability changes
+    ↓
+json.dump()
+    ↓
+Updated books.json
+```
+
+This allows the Library Management System to keep its book information even after the program is closed.
